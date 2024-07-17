@@ -74,7 +74,8 @@ int main(int argc, char **argv)
 		scanf("%199s", url);
 		while(1) {
                     c = getchar();
-                    if (c == ' ' || c == '\n' || c == EOF) break;
+                    if (c == ' ' || c == '\n' || c == EOF) 
+			    break;
                 }
 		printf("\n");
 
