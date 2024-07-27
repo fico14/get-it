@@ -1,17 +1,19 @@
 PROGRAM=get-it
-OBJECTS=src/get_it.c
+OBJECTS=src/get_it.c src/parser.c
+INCLUDE=src/parser.h
 CC=gcc
 LDFLAGS=-lcurl
 DEBUG=-DDEBUG
 
 .PHONY: $(PROGRAM)
 $(PROGRAM):
-	$(CC) $(OBJECTS) $(LDFLAGS) -o $(PROGRAM)
+	$(CC) $(OBJECTS) $(INCLUDE) $(LDFLAGS) -o $(PROGRAM)
 
 debug:
-	$(CC) $(OBJECTS) $(LDFLAGS) $(DEBUG) -o $(PROGRAM)
+	$(CC) $(OBJECTS) $(INCLUDE) $(LDFLAGS) $(DEBUG) -o $(PROGRAM)
 
 run:
+	make
 	./$(PROGRAM)
 
 .PHONY: clean

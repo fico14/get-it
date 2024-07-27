@@ -8,10 +8,14 @@
 #include <unistd.h>
 #include <errno.h>
 #include <signal.h>
+#include "parser.h"
 
 #define MAX_NUM_TABS 	5
 #define URL_LENGTH 	200
 
+static const char *home = "home.html";
+static int home_fd;
+static const char *telesport = "https://www.telegram.hr/telesport/";
 static char filename[MAX_NUM_TABS][20];
 static int fd[MAX_NUM_TABS] = {0};
 static int pids[MAX_NUM_TABS] = {0};
@@ -36,6 +40,22 @@ void sighandler(int signum)
 	exit(0);
 }
 
+static void print_menu(char **links, int sz)
+{
+	printf("Dostupni clanci: \n");
+	for (int i = 0; i < sz; i++)
+		printf("%d) %s\n", i + 1, links[i]);
+
+	printf("For exit type anything different from available article"
+			" numbers\n");
+}
+
+size_t write_home(void *ptr, size_t sz, size_t nmemb)
+{
+	int buff_size = sz*nmemb;
+	return write(home_fd, ptr, buff_size);
+}
+
 size_t writefunc(void *ptr, size_t size, size_t nmemb)
 {
 	int buff_size = size*nmemb;
@@ -46,52 +66,78 @@ int main(int argc, char **argv)
 {
 	CURLcode res;
 	char cmd[80] = {0};
-	char url[200] = {0};
+	char *url = NULL;
 	int status = 0;
-	char c;
+	int c;
+	char **links = NULL;
+	int size;
 	struct sigaction sa;
 
 	sa.sa_handler = sighandler;
 	sigaction(SIGINT, &sa, NULL);
 
-	if (argc != 1) {
-		printf("Program requires no arguments.\n"
-			"It will automatically open links in Firefox\n");
-		return 0;
+	home_fd = open(home, O_CREAT | O_RDWR | O_APPEND, 0644);
+	if (home_fd == -1) {
+		printf("Could not create file, err = %d\n", errno);
+		goto exit;
 	}
+
+	curl = curl_easy_init();
+	if (!curl) {
+		printf("Error in library.");
+		close(home_fd);
+		remove(home);
+		goto exit;
+	}
+
+	curl_easy_setopt(curl, CURLOPT_URL, telesport);
+	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_home);
+	res = curl_easy_perform(curl);
+	if (res) {
+		printf("Error in library, err = %d ...\n", res);
+		close(home_fd);
+		remove(home);
+		curl_easy_cleanup(curl);
+		exit(-1);
+	}
+
+	links = parse_home(home_fd, &size);
+	if (!links) {
+		printf("Unknown error ...\n");
+		close(home_fd);
+		remove(home);
+		goto exit;
+	}
+
+	close(home_fd);
+	remove(home);
 
 	printf("******************************************************************\n");
 	printf("**************** get_it, Telesport Cracker v1.0 ******************\n");
 	printf("******************************************************************\n");
 
 	while(1) {
+		print_menu(links, size);
+
 		curl = curl_easy_init();
 		if (!curl) {
 			printf("Error in library.");
 			goto exit;
 		}
-		printf("\nEnter URL: ");
-		scanf("%199s", url);
-		while(1) {
-                    c = getchar();
-                    if (c == ' ' || c == '\n' || c == EOF) 
-			    break;
-                }
-		printf("\n");
 
-		if (strcmp(url, "quit") == 0)
-			break;
-
-		if (strcmp(url, "exit") == 0)
-			break;
-
-		if (num_procs == MAX_NUM_TABS) {
-			printf("No more tabs can be open.\n"
-			       "You can exit using 'quit' or 'exit' command\n");
-			continue;
+		scanf("Enter article: %d\n", &c);
+		if (c < 1 || c > size) {
+			goto exit;
 		}
 
-		sprintf(filename[num_procs], "response%d.html", num_procs);
+		if (num_procs == MAX_NUM_TABS) {
+			printf("No more tabs can be open.\n");
+			goto exit;
+		}
+
+		url = links[c - 1];
+
+		sprintf(filename[num_procs], "%d.html", num_procs);
 		fd[num_procs] = open(filename[num_procs],
 					O_CREAT | O_RDWR | O_APPEND,
 					0644);
@@ -104,6 +150,11 @@ int main(int argc, char **argv)
 		curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, writefunc);
 		res = curl_easy_perform(curl);
 
+		if (res) {
+			printf("Invalid URL ...\n");
+			continue;
+		}
+
 		pid_t pid = fork();
 		switch(pid) {
 			case -1:   // fork failed
@@ -115,14 +166,15 @@ int main(int argc, char **argv)
 
 			case 0:    // child process
 				memset(cmd, 0, 80);
-				sprintf(cmd, "firefox %s", filename[num_procs]);
+				sprintf(cmd, "firefox %s > /dev/null 2>&1",
+						filename[num_procs]);
 				system(cmd);
 				exit(0);
 				break;
 
 			default:
 #ifdef DEBUG
-				printf("PID novog procesa: %d\n", pid);
+				printf("child PID: %d\n", pid);
 #endif
 				pids[num_procs++] = pid;
 				break;
