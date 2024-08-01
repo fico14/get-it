@@ -1,5 +1,5 @@
 # get-it
-Simple program that opens webpages with shitty authentication in Firefox. It can open up to 5 tabs in the same session.
+Simple program that opens webpages with shitty authentication in Firefox. Number of tabs opened can be changed (lazy in the begining of the project. This limit should be removed in the future ...)
 
 Prerequisites:
   1) gcc 
