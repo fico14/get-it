@@ -17,5 +17,8 @@ Run:
   1) make run
   2) ./get_it
 
+Install (in my case it'll be installed in directory that's in my $PATH and where I keep my local apps, but you can change location in the Makefile if you like):
+  make install 
+
 Usage: 
   Just run it without any arguments.
