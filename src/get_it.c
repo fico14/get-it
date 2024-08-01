@@ -9,11 +9,12 @@
 #include <errno.h>
 #include <signal.h>
 #include "parser.h"
+#include "list.h"
 
 #define MAX_NUM_TABS 	5
 #define URL_LENGTH 	200
 
-static const char *home = "home.html";
+const char *home = "home.html";
 static int home_fd;
 static const char *telesport = "https://www.telegram.hr/telesport/";
 static char filename[MAX_NUM_TABS][20];
@@ -40,12 +41,15 @@ void sighandler(int signum)
 	exit(0);
 }
 
-static void print_menu(char **links, int sz)
+static void print_menu(struct list_head *list)
 {
 	printf("Dostupni clanci: \n");
-	for (int i = 0; i < sz; i++)
-		printf("%d) %s\n", i + 1, links[i]);
-
+	struct list *tmp = list->next;
+	int i = 1;
+	while(tmp) {
+		printf("%d) %s\n", i++, tmp->link);
+		tmp = tmp->next;
+	}
 	printf("For exit type anything different from available article"
 			" numbers\n");
 }
@@ -69,8 +73,7 @@ int main(int argc, char **argv)
 	char *url = NULL;
 	int status = 0;
 	int c;
-	char **links = NULL;
-	int size;
+	struct list_head *list = NULL;
 	struct sigaction sa;
 
 	sa.sa_handler = sighandler;
@@ -101,8 +104,11 @@ int main(int argc, char **argv)
 		exit(-1);
 	}
 
-	links = parse_home(home_fd, &size);
-	if (!links) {
+	close(home_fd);
+
+	home_fd = open(home, O_RDWR | O_APPEND);
+	list = parse_home(home_fd);
+	if (!list) {
 		printf("Unknown error ...\n");
 		close(home_fd);
 		remove(home);
@@ -117,7 +123,7 @@ int main(int argc, char **argv)
 	printf("******************************************************************\n");
 
 	while(1) {
-		print_menu(links, size);
+		print_menu(list);
 
 		curl = curl_easy_init();
 		if (!curl) {
@@ -126,7 +132,7 @@ int main(int argc, char **argv)
 		}
 
 		scanf("Enter article: %d\n", &c);
-		if (c < 1 || c > size) {
+		if (c < 1 || c > list->count) {
 			goto exit;
 		}
 
@@ -135,7 +141,7 @@ int main(int argc, char **argv)
 			goto exit;
 		}
 
-		url = links[c - 1];
+		url = list_get(c - 1, list);
 
 		sprintf(filename[num_procs], "%d.html", num_procs);
 		fd[num_procs] = open(filename[num_procs],
@@ -200,6 +206,9 @@ exit:
 		printf("%s\n", filename[i]);
 #endif
 	}
+
+	if (list)
+		list_destroy(list);
 
 	return 0;
 }
