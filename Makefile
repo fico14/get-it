@@ -16,6 +16,11 @@ run:
 	make
 	./$(PROGRAM)
 
+install:
+	mkdir ~/.mybin
+	chmod +x $(PROGRAM)
+	cp $(PROGRAM) ~/.mybin
+
 .PHONY: clean
 clean:
 	-rm -f src/*.o
