@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+
 #include "list.h"
 
 int list_contains(struct list_head *lista, char *link)
@@ -28,9 +29,6 @@ int list_add(struct list_head *lista, char *link)
 		return -1;
 	}
 
-	//vidit sta radit s ovim char *(je li to vec alocirano ili je to samo
-	//pointer na znak u stringu home pagea koji je procitan u string )
-
 	tmp->link = link;
 	tmp->next = lista->next;
 	lista->next = tmp;
@@ -56,5 +54,15 @@ char *list_get(int num, struct list_head *list)
 
 int list_destroy(struct list_head *head)
 {
+	struct list *first = head->next;
+	struct list *tmp;
+
+	while (first) {
+		 tmp = first;
+		 first = first->next;
+		 free(tmp->link);
+		 free(tmp);
+	}
+
 	return 0;
 }

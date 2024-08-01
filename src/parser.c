@@ -7,10 +7,38 @@
 #include "parser.h"
 #include "list.h"
 
+static const char *blacklist[] = {
+				"https://www.telegram.hr/telesport/",
+				"https://www.telegram.hr/telesport/na-prvu/",
+				"https://www.telegram.hr/telesport/price-telesport/",
+				"https://www.telegram.hr/telesport/analize/",
+				"https://www.telegram.hr/telesport/kolumne/"
+};
 static const char *httpspart = "https://www.telegram.hr";
 static const char *pattern = "href=\"/telesport/";
 extern const char *home;
+
 struct list_head lista = LIST_INIT;
+
+void print_article_name(char *link)
+{
+	char *tmp = link + strlen(httpspart) + 1;
+	tmp = strstr(tmp, "/");
+	tmp++;
+	tmp = strstr(tmp, "/");
+	tmp++;
+
+	while(*tmp && *tmp != '/') {
+		if (*tmp == '-') {
+			printf(" ");
+		} else {
+			printf("%c", *tmp);
+		}
+		tmp++;
+	}
+
+	printf("\n");
+}
 
 static long get_file_size(const char *filename) {
 	struct stat file_status;
@@ -20,6 +48,14 @@ static long get_file_size(const char *filename) {
 	}
 
 	return file_status.st_size;
+}
+
+static int link_blacklisted(char *link)
+{
+	for (int i = 0; i < 5; i++)
+		if (strcmp(link, blacklist[i]) == 0)
+			return 1;
+	return 0;
 }
 
 int add_correct_link(char *matching)
@@ -47,14 +83,14 @@ int add_correct_link(char *matching)
 	strcpy(link, httpspart);
 	strncpy(link + strlen(httpspart), start, end - start);
 
-	if (list_contains(&lista, link) == 1) {
+	if (list_contains(&lista, link) == 1 || link_blacklisted(link)) {
 		free(link);
 		return 0;
 	}
 
 	list_add(&lista, link);
 #ifdef DEBUG
-	printf("Kompletan link: %s \n", link);
+	printf("Complete link: %s \n", link);
 #endif
 	return 0;
 }
@@ -78,7 +114,7 @@ static int fill_list(char *content)
 
 struct list_head *parse_home(int fd) {
 #ifdef DEBUG
-	printf("pattern: %s", pattern);
+	printf("Pattern: %s", pattern);
 #endif
 	int ret = 0;
 
@@ -93,7 +129,7 @@ struct list_head *parse_home(int fd) {
 		printf("Couldn't allocate memory ...");
 		return NULL;
 	}
-	// 1) Procitaj cijelu datoteku
+
 	ret = read(fd, content, home_size);
 	if (ret == -1) {
 		printf("Error during file reading. Home size = %ld, ret = %d",
@@ -105,9 +141,6 @@ struct list_head *parse_home(int fd) {
 	fflush(stdout);
 #endif
 
-	// 2) Trazi linkove uz href koji odgovaraju telesport linkovima sa clanaka
-	// 3) Napravi potpune linkove, alociraj memoriju za string i
-	// dodaj ih u vezanu listu
 	ret = fill_list(content);
 	return &lista;
 }

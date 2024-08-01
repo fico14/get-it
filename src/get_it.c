@@ -8,11 +8,17 @@
 #include <unistd.h>
 #include <errno.h>
 #include <signal.h>
+
 #include "parser.h"
 #include "list.h"
 
-#define MAX_NUM_TABS 	5
+#define MAX_NUM_TABS 	10
 #define URL_LENGTH 	200
+
+static const char *title =
+"******************************************************************\n"
+"**************** get_it, Telesport Cracker v2.0 ******************\n"
+"******************************************************************\n";
 
 const char *home = "home.html";
 static int home_fd;
@@ -43,14 +49,18 @@ void sighandler(int signum)
 
 static void print_menu(struct list_head *list)
 {
-	printf("Dostupni clanci: \n");
 	struct list *tmp = list->next;
 	int i = 1;
+
+	printf("%s", title);
+	printf("Available articles: \n");
+
 	while(tmp) {
-		printf("%d) %s\n", i++, tmp->link);
+		printf("%d) ", i++);
+		print_article_name(tmp->link);
 		tmp = tmp->next;
 	}
-	printf("For exit type anything different from available article"
+	printf("\nFor exit type anything different from available article"
 			" numbers\n");
 }
 
@@ -109,7 +119,7 @@ int main(int argc, char **argv)
 	home_fd = open(home, O_RDWR | O_APPEND);
 	list = parse_home(home_fd);
 	if (!list) {
-		printf("Unknown error ...\n");
+		printf("Unknown error while parsing ...\n");
 		close(home_fd);
 		remove(home);
 		goto exit;
@@ -118,21 +128,18 @@ int main(int argc, char **argv)
 	close(home_fd);
 	remove(home);
 
-	printf("******************************************************************\n");
-	printf("**************** get_it, Telesport Cracker v1.0 ******************\n");
-	printf("******************************************************************\n");
-
+	print_menu(list);
 	while(1) {
-		print_menu(list);
 
 		curl = curl_easy_init();
 		if (!curl) {
 			printf("Error in library.");
 			goto exit;
 		}
-
-		scanf("Enter article: %d\n", &c);
+		printf("Enter article number: ");
+		scanf("%d", &c);
 		if (c < 1 || c > list->count) {
+			printf("Entered article number: %d\n", c);
 			goto exit;
 		}
 
@@ -195,9 +202,7 @@ int main(int argc, char **argv)
 exit:
 	printf("Exiting ...\n");
 
-	/* always cleanup */
 	curl_easy_cleanup(curl);
-
 	for(int i = 0; i < num_procs; i++) {
 		kill(pids[i], SIGKILL);
 		close(fd[i]);
