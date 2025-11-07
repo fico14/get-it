@@ -12,7 +12,7 @@
 #include "parser.h"
 #include "list.h"
 
-#define MAX_NUM_TABS 	10
+#define MAX_NUM_TABS 	20
 #define URL_LENGTH 	200
 
 static const char *title =
@@ -179,7 +179,9 @@ int main(int argc, char **argv)
 
 			case 0:    // child process
 				memset(cmd, 0, 80);
-				sprintf(cmd, "firefox %s > /dev/null 2>&1",
+				/* sprintf(cmd, "firefox %s > /dev/null 2>&1", */
+				/* 		filename[num_procs]); */
+				sprintf(cmd, "xdg-open %s > /dev/null 2>&1",
 						filename[num_procs]);
 				system(cmd);
 				exit(0);

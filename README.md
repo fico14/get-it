@@ -1,24 +1,24 @@
 # get-it
-Simple program that opens webpages with shitty authentication in Firefox. Number of tabs opened can be changed (lazy in the begining of the project. This limit should be removed in the future ...)
+Simple CLI program that opens webpages with shitty authentication in your default browser. Number of tabs that are opened is fixed (lazy in the begining of the project :) This limit should be removed in the future ...)
 
 Prerequisites:
-  1) gcc 
+  1) gcc
   2) make
   3) libcurl4-openssl-dev
   4) and a Linux machine ... ;)
 
-Build: 
+Build:
   make
-  
-Debug build: 
+
+Debug build:
   make debug
-  
-Run: 
+
+Run:
   1) make run
-  2) ./get_it
+  2) ./get_it (or just get-it if it is placed in your PATH)
 
-Install (in my case it'll be installed in directory that's in my $PATH and where I keep my local apps, but you can change location in the Makefile if you like):
-  make install 
+Install (by default it is installed in ~/.local/bin/ but that can be changed in the Makefile with the variable INSTALL_DIR):
+  make install
 
-Usage: 
+Usage:
   Just run it without any arguments.
