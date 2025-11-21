@@ -12,7 +12,8 @@ static const char *blacklist[] = {
 				"https://www.telegram.hr/telesport/na-prvu/",
 				"https://www.telegram.hr/telesport/price-telesport/",
 				"https://www.telegram.hr/telesport/analize/",
-				"https://www.telegram.hr/telesport/kolumne/"
+				"https://www.telegram.hr/telesport/kolumne/",
+				NULL
 };
 static const char *httpspart = "https://www.telegram.hr";
 static const char *pattern = "href=\"/telesport/";
@@ -41,24 +42,25 @@ void print_article_name(char *link)
 }
 
 static long get_file_size(const char *filename) {
-	struct stat file_status;
+	struct stat fs;
 
-	if (stat(filename, &file_status) < 0) {
+	if (stat(filename, &fs) < 0) {
 		return -1;
 	}
 
-	return file_status.st_size;
+	return fs.st_size;
 }
 
 static int link_blacklisted(char *link)
 {
-	for (int i = 0; i < 5; i++)
-		if (strcmp(link, blacklist[i]) == 0)
+	int i = 0;
+	while(blacklist[i] != NULL)
+		if (strcmp(link, blacklist[i++]) == 0)
 			return 1;
 	return 0;
 }
 
-int add_correct_link(char *matching)
+static int add_link(char *matching)
 {
 	char *start = matching + strlen("href=\"");
 #ifdef DEBUG
@@ -105,7 +107,7 @@ static int fill_list(char *content)
 		if (!matching)
 			return 0;
 
-		add_correct_link(matching);
+		add_link(matching);
 		tmp = matching + strlen("href=\"");
 	}
 

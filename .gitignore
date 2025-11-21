@@ -53,3 +53,9 @@ dkms.conf
 
 # Application binary
 get-it
+
+#compile_commands.json
+compile_commands.json
+
+#clangd cache
+.cache/

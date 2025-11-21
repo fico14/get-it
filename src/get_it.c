@@ -114,9 +114,10 @@ int main(int argc, char **argv)
 		exit(-1);
 	}
 
-	close(home_fd);
+	/* Move to the start of the file after it is written so we can read
+	 * it from the start */
+	lseek(home_fd,0,SEEK_SET);
 
-	home_fd = open(home, O_RDWR | O_APPEND);
 	list = parse_home(home_fd);
 	if (!list) {
 		printf("Unknown error while parsing ...\n");
@@ -130,12 +131,6 @@ int main(int argc, char **argv)
 
 	print_menu(list);
 	while(1) {
-
-		curl = curl_easy_init();
-		if (!curl) {
-			printf("Error in library.");
-			goto exit;
-		}
 		printf("Enter article number: ");
 		scanf("%d", &c);
 		if (c < 1 || c > list->count) {
