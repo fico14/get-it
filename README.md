@@ -17,8 +17,11 @@ Run:
   1) make run
   2) ./get_it (or just get-it if it is placed in your PATH)
 
-Install (by default it is installed in ~/.local/bin/ but that can be changed in the Makefile with the variable INSTALL_DIR):
+Install (by default it is installed in ~/.local/bin/):
   make install
+
+Or you can install it on some other location (you will need sudo privileges for some directories):
+  make INSTALL_DIR=<directory> install
 
 Usage:
   Just run it without any arguments.
