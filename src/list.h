@@ -1,8 +1,10 @@
 #ifndef _LIST_H_
 #define _LIST_H_
 
+#include <stdint.h>
+
 struct list_head {
-	int count;
+	uint32_t count;
 	struct list *next;
 };
 

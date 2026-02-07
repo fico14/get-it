@@ -8,16 +8,18 @@
 #include <unistd.h>
 #include <errno.h>
 #include <signal.h>
+#include <stdint.h>
 
 #include "parser.h"
 #include "list.h"
 
 #define MAX_NUM_TABS 	20
 #define URL_LENGTH 	200
+#define INPUT_LEN 	256
 
 static const char *title =
 "******************************************************************\n"
-"**************** get_it, Telesport Cracker v2.0 ******************\n"
+"**************** get_it, Telesport Cracker v2.1 ******************\n"
 "******************************************************************\n";
 
 const char *home = "home.html";
@@ -29,8 +31,10 @@ static int pids[MAX_NUM_TABS] = {0};
 static int num_procs = 0;
 static CURL *curl;
 
-void sighandler(int signum)
+void sighandler(int signal)
 {
+	(void) signal;
+
 	printf("\nExiting ...\n");
 
 	curl_easy_cleanup(curl);
@@ -64,13 +68,13 @@ static void print_menu(struct list_head *list)
 			" numbers\n");
 }
 
-size_t write_home(void *ptr, size_t sz, size_t nmemb)
+static size_t write_home(void *ptr, size_t sz, size_t nmemb)
 {
 	int buff_size = sz*nmemb;
 	return write(home_fd, ptr, buff_size);
 }
 
-size_t writefunc(void *ptr, size_t size, size_t nmemb)
+static size_t writefunc(void *ptr, size_t size, size_t nmemb)
 {
 	int buff_size = size*nmemb;
 	return write(fd[num_procs], ptr, buff_size);
@@ -81,10 +85,14 @@ int main(int argc, char **argv)
 	CURLcode res;
 	char cmd[80] = {0};
 	char *url = NULL;
-	int status = 0;
-	int c;
+	uint32_t article_num = 0;
+	char input[INPUT_LEN] = {0};
+	int ret = 0;
 	struct list_head *list = NULL;
 	struct sigaction sa;
+
+	(void) argc;
+	(void) argv;
 
 	sa.sa_handler = sighandler;
 	sigaction(SIGINT, &sa, NULL);
@@ -130,12 +138,30 @@ int main(int argc, char **argv)
 	remove(home);
 
 	print_menu(list);
+
 	while(1) {
 		printf("Enter article number: ");
-		scanf("%d", &c);
-		if (c < 1 || c > list->count) {
-			printf("Entered article number: %d\n", c);
+
+		/*If  a  newline  is  read,  it is stored into the buffer.
+		A terminating null byte ('\0') is stored after the last
+		character in the buffer.
+		*/
+		if (fgets(input, INPUT_LEN - 2, stdin) == NULL) {
+			printf("Error while reading input, err = %d!\n", errno);
 			goto exit;
+		}
+
+		ret = sscanf(input, "%u", &article_num);
+		if (ret != 1) {
+			printf("Invalid input!\n");
+			memset(input, 0, INPUT_LEN);
+			continue;
+		}
+
+		if (article_num < 1 || article_num > list->count) {
+			printf("Article %u doesn't exist!\n", article_num);
+			memset(input, 0, INPUT_LEN);
+			continue;
 		}
 
 		if (num_procs == MAX_NUM_TABS) {
@@ -143,7 +169,7 @@ int main(int argc, char **argv)
 			goto exit;
 		}
 
-		url = list_get(c - 1, list);
+		url = list_get(article_num - 1, list);
 
 		sprintf(filename[num_procs], "%d.html", num_procs);
 		fd[num_procs] = open(filename[num_procs],

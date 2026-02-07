@@ -1,16 +1,17 @@
 PROGRAM=get-it
 OBJECTS=src/get_it.c src/parser.c src/list.c
 CC=gcc
+CFLAGS=-Wall -Wextra -Werror
 LDFLAGS=-lcurl
 DEBUG=-DDEBUG
 INSTALL_DIR=~/.local/bin/
 
 .PHONY: $(PROGRAM)
 $(PROGRAM):
-	$(CC) $(OBJECTS) $(LDFLAGS) -o $(PROGRAM)
+	$(CC) $(OBJECTS) $(CFLAGS) $(LDFLAGS) -o $(PROGRAM)
 
 debug:
-	$(CC) $(OBJECTS) $(LDFLAGS) $(DEBUG) -o $(PROGRAM)
+	$(CC) $(OBJECTS) $(CFLAGS) $(LDFLAGS) $(DEBUG) -o $(PROGRAM)
 
 run:
 	make
