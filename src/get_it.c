@@ -64,8 +64,7 @@ static void print_menu(struct list_head *list)
 		print_article_name(tmp->link);
 		tmp = tmp->next;
 	}
-	printf("\nFor exit type anything different from available article"
-			" numbers\n");
+	printf("\nFor exit press \'Ctrl+C\'\n");
 }
 
 static size_t write_home(void *ptr, size_t sz, size_t nmemb)
